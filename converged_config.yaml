@@ -1,0 +1,87 @@
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: sql-priority
+  namespace: stack1
+value: 1000
+globalDefault: false
+# Priority class for the MySQL deployment with a value of 1000.
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: php-priority
+  namespace: stack1
+value: 900
+globalDefault: false
+# Priority class for the PHP deployment with a value of 900.
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysqlsecrets
+  namespace: stack1
+type: kubernetes.io/basic-auth
+stringData:
+  username: root         # MySQL username
+  MYSQL_ROOT_PASSWORD: mypw         # MySQL root password
+# Secret containing the MySQL username and password using the kubernetes.io/basic-auth type.
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvol
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/mysql_data"
+# Persistent volume with 10Gi storage, accessible with ReadWriteMany mode, using a host path /mnt/mysql_data.
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc
+  labels:
+    type: localpvc
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Gi
+# Persistent volume claim that claims 1Gi of storage from the pvol persistent volume.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cm-env
+  namespace: stack1
+data:
+  MYSQL_USER: "root"
+  MYSQL_DATABASE: "mydb"
+  MYSQL_HOST: "mysql-service"
+# ConfigMap storing environment variables for the MySQL connection (MYSQL_USER, MYSQL_DATABASE, MYSQL_HOST).
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: sqlphpquota
+  namespace: stack1
+  labels:
+    app: phpapp
+    db: mysql
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 8Gi
+    limits.cpu: "2"
+    limits.memory: 10Gi
+#QuotaResources defined as a limit total consumption for all pods deployed. cannot go over the limit defined.

@@ -1,0 +1,7 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: sql-priority
+  namespace: stack1
+value: 1000
+globalDefault: false

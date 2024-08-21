@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  deletionTimestamp: null
+  namespace: stack1
+  name: phpapp
+  labels:
+    app: phpapp
+spec:
+  selector:
+    matchLabels:
+      app: phpapp
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: phpapp
+    spec:
+      priorityClassName: php-priority
+        #      initContainers:
+        #      - name: update-perms
+        #        image: busybox:1.28
+        #        command: ['sh', '-c', 'chown -R www-data:www-data /var/www/html']
+        #        volumeMounts:
+        #        - name: php-storage
+        #          mountPath: /var/www/html
+        #        resources: 
+        #          requests:
+        #            memory: "200Mi"
+        #            cpu: "50m"
+        #          limits:
+        #            memory: "1Gi"
+        #            cpu: "100m"
+      containers:
+      - name: phpapp
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "50m"
+          limits:
+            memory: "1Gi"
+            cpu: "200m"
+        image: ppatel98/myphpapp:1.0
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: php-storage
+          mountPath: /var/log/phpdata
+        env:
+        - name: MYSQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_USER
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_DATABASE
+        - name: MYSQL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_HOST
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysqlsecrets
+              key: MYSQL_ROOT_PASSWORD
+      volumes:
+      - name: php-storage
+        configMap:
+          name: cm-env

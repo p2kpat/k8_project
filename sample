@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: stack1
+  name: phpapp
+  labels:
+    app: phpapp
+spec:
+  selector:
+    matchLabels:
+      app: phpapp
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: phpapp
+    spec:
+      priorityClassName: php-priority
+      containers:
+      - name: phpapp
+        image: ppatel98/myphpapp:0.5
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: php-storage
+          mountPath: /var/www/html
+        env:
+        - name: MYSQL_USER
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_USER
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_DATABASE
+        - name: MYSQL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_HOST
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysqlsecrets
+              key: password
+      volumes:
+      - name: php-storage
+        configMap:
+          name: php-config

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: stack1
+  creationTimestamp: null
+  name: mysql
+  labels:
+    db: mysql
+  deletionTimestamp: null
+spec:
+  selector:
+    matchLabels:
+      db: mysql
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        db: mysql
+    spec:
+      priorityClassName: sql-priority
+      volumes:
+        #      - name: mysql-password
+        #        emptyDir: {}
+      - name: mysql-pvc-storage
+        persistentVolumeClaim:
+          claimName: pvc
+
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        resources:
+          requests:
+            memory: "500Mi"
+            cpu: "10m"
+          limits:
+            memory: "1Gi"
+            cpu: "100m"
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysqlsecrets
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_HOST            
+        - name: MYSQL_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: cm-env
+              key: MYSQL_DATABASE
+
+        ports:
+        - containerPort: 3306
+
+        volumeMounts:
+          #        - name: mysql-password
+          #          mountPath: "/tmp"
+        - name: mysql-pvc-storage
+          mountPath: "/var/lib/mysql"       
